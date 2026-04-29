@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Optional, List, Literal
 from pydantic import BaseModel, Field, HttpUrl
 
-# 1. Enums: Enforce strict categories so the LLM doesn't "hallucinate" new ones
+# 1. Enums: Enforce strict categories to avoid hallucination
 class EvidenceSource(str, Enum):
     PUBMED = "PubMed"
     WHO = "WHO"
