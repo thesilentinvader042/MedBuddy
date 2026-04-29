@@ -22,7 +22,7 @@ from pipeline.gate import gate_check
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ── Startup ──────────────────────────────────────────────
+    # Startup
     col = get_collection()
     if col.count() == 0:
         print("⚠️  Empty store detected — running auto-seed...")
@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
 
     yield  # app runs here
 
-    # ── Shutdown ─────────────────────────────────────────────
+    # Shutdown
     print("🛑 Shutting down MedQA")
 
 
@@ -50,24 +50,24 @@ app.add_middleware(
 
 async def run_pipeline(req: QueryRequest) -> DiagnosticResponse:
 
-    # Stage 2 — Preprocess
+    # Preprocessing the input query
     normalized, entities = normalize(req.query)
 
-    # Stage 3 — Intent classification
+    # Intent classification
     intent_result = await classify_intent(normalized)
     intent = intent_result["intent"]
     intent_confidence = intent_result["confidence"]
 
-    # Stage 4 — Query decomposition
+    # Query decomposition
     sub_queries = await decompose(normalized, entities, req.age)
 
-    # Stage 5 — Hybrid RAG retrieval
+    # Retrieval of chunks
     raw_chunks = await hybrid_retrieve(sub_queries, top_k=7)
 
-    # Stage 6 — Validate and rerank
+    # Validation
     validated_chunks = validate_and_rerank(raw_chunks)
 
-    # Early gate — no evidence at all
+    # Filtering out no-evidence docs
     if not validated_chunks:
         return DiagnosticResponse(
             answer="",
@@ -80,13 +80,13 @@ async def run_pipeline(req: QueryRequest) -> DiagnosticResponse:
             fallback_reason="No relevant evidence found in trusted sources for this query.",
         )
 
-    # Stage 7 — Compress context
+    # Compressing context
     compressed = compress_context(validated_chunks)
 
-    # Stage 8 — Bind evidence
+    # Binding Evidence
     citations = bind_evidence(validated_chunks)
 
-    # Stage 9 — Generate
+    # Generating answer
     patient_info = ""
     if req.age:
         patient_info += f"Age: {req.age}"
@@ -103,13 +103,13 @@ async def run_pipeline(req: QueryRequest) -> DiagnosticResponse:
         evidence_chunks=validated_chunks,
     )
 
-    # Stage 10 — Format output
+    # Formatting output
     answer, key_points = format_output(raw_answer)
 
-    # Stage 11 — Confidence scoring
+    # Confidence scoring
     confidence = score_confidence(validated_chunks, intent_confidence, answer)
 
-    # Stage 12 — Failure gate
+    # Failure gate
     gate = gate_check(confidence, validated_chunks, intent)
     if not gate["pass"]:
         return DiagnosticResponse(
