@@ -26,9 +26,5 @@ def format_output(raw_text: str) -> tuple[str, list[str]]:
             answer_lines.append(line)
 
     answer = " ".join(answer_lines).strip()
-    # Enforce brevity — truncate to ~150 tokens worth of text
-    words = answer.split()
-    if len(words) > 120:
-        answer = " ".join(words[:120]) + "…"
 
     return answer, key_points
